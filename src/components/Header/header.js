@@ -1,32 +1,31 @@
-import React from 'react';
-
-
-
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom"; // استيراد useNavigate للتنقل
 
 function MyNavbar() {
+  const [showDropdown, setShowDropdown] = useState(false);
+  const navigate = useNavigate(); // استخدام useNavigate للتنقل
+
   return (
-<nav class="navbar navbar-expand-lg bg-light">
-  <div class="container-fluid">
-    <a class="navbar-brand" 
-    >Sports</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav">
-        <li class="nav-item">
-          <a class="nav-link active" aria-current="page" href="e">Home</a>
+    <header className="hide-when-mobile" style={{ height: "60px", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px" }}>
+      {/* عنوان الموقع */}
+      <h1 style={{ fontSize: "20px", margin: 0 }}>Health monitoring website</h1>
+
+      {/* قائمة التنقل */}
+      <ul className="flex" style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", alignItems: "center" }}>
+        {/* زر الرجوع */}
+        <li style={{ padding: "10px", cursor: "pointer" }} onClick={() => navigate(-1)}>
+          <button style={{ padding: "5px 10px", background: "#007bff", color: "white", border: "none", borderRadius: "5px", cursor: "pointer" , marginLeft:"-100px"}}>
+            رجوع
+          </button>
         </li>
-        <li class="nav-item">
-          <a class="nav-link" href="f">Login</a>
-        </li>
-  
+
+        {/* زر التقديم */}
+      
+
+
       </ul>
-    </div>
-  </div>
-</nav>
+    </header>
   );
 }
 
 export default MyNavbar;
-

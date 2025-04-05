@@ -1,0 +1,41 @@
+/* Light Mode */
+body.light-mode {
+  background-color: #ffffff;
+  color: #000000; /* لون النص أسود */
+}
+
+body.light-mode h1,
+body.light-mode h2,
+body.light-mode p,
+body.light-mode span,
+body.light-mode a {
+  color: #000000; /* لون النص أسود */
+  font-weight: bold; /* النص سميك */
+}
+
+body.light-mode .btn {
+  background-color: #007bff;
+  color: white;
+  font-weight: bold; /* زر سميك */
+}
+
+/* Dark Mode */
+body.dark-mode {
+  background-color: #121212;
+  color: #ffffff; /* لون النص أبيض */
+}
+
+body.dark-mode h1,
+body.dark-mode h2,
+body.dark-mode p,
+body.dark-mode span,
+body.dark-mode a {
+  color: #ffffff; /* لون النص أبيض */
+  font-weight: bold; /* النص سميك */
+}
+
+body.dark-mode .btn {
+  background-color: #1e1e1e;
+  color: #ffffff;
+  font-weight: bold; /* زر سميك */
+}

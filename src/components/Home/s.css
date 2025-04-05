@@ -1,0 +1,54 @@
+/* s.css */
+
+body {
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+  background: url('/public/etactics-inc-gnsjzu4_3xA-unsplash.jpg') no-repeat center center fixed;
+  background-size: cover;
+  color: white;
+}
+
+.sidebar {
+  background-color: rgba(0, 0, 0, 0.8); /* شفافية للخلفية */
+  height: 100vh;
+  overflow-y: auto;
+}
+
+
+.chart-container {
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.cardd {
+  background-color: rgba(255, 255, 255, 0.8); /* خلفية بيضاء شفافة */
+  border-radius: 15px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+button {
+  font-family: 'Poppins', sans-serif;
+  transition: transform 0.2s ease-in-out;
+}
+
+button:hover {
+  transform: scale(1.05);
+}
+
+/* استايل للأزرار */
+.btn-outline-secondary {
+  border-color: #ffffff;
+  color: #ffffff;
+}
+
+.btn-outline-secondary:hover {
+  background-color: #ffffff;
+  color: #000000;
+}
+
+/* استايل للتقييم الصحي */
+.alert-info {
+  background-color: rgba(135, 206, 250, 0.8);
+  border: none;
+  color: #000000;
+}
