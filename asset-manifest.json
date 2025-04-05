@@ -1,0 +1,14 @@
+{
+  "files": {
+    "main.css": "/my-react-app/static/css/main.c2cae55e.css",
+    "main.js": "/my-react-app/static/js/main.6f176989.js",
+    "static/media/etactics-inc-gnsjzu4_3xA-unsplash.jpg": "/my-react-app/static/media/etactics-inc-gnsjzu4_3xA-unsplash.78a058b46b77c445fdc5.jpg",
+    "index.html": "/my-react-app/index.html",
+    "main.c2cae55e.css.map": "/my-react-app/static/css/main.c2cae55e.css.map",
+    "main.6f176989.js.map": "/my-react-app/static/js/main.6f176989.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.c2cae55e.css",
+    "static/js/main.6f176989.js"
+  ]
+}
