@@ -109,7 +109,7 @@ const HistoryPage = () => {
 
       {/* Blood Pressure Table */}
       <div className="container my-5">
-        <h2 className="text-center mb-4 text-white">🩺 سجل قياسات الضغط</h2>
+        <h2 className="text-center mb-4 text-white">🩺 سجل القياسات</h2>
         <table className="table table-hover shadow-lg">
           <thead className="bg-primary text-white">
             <tr>
@@ -152,7 +152,7 @@ const HistoryPage = () => {
 
       {/* ECG Analysis Table */}
       <div className="container my-5">
-        <h2 className="text-center mb-4 text-white">📊 سجل تحليل ECG</h2>
+        <h2 className="text-center mb-4 text-white">📊 تحليل اشاراه القلب</h2>
         <table className="table table-hover shadow-lg">
           <thead className="bg-success text-white">
             <tr>
@@ -189,7 +189,7 @@ const HistoryPage = () => {
 
       {/* Top ADC Values Table */}
       <div className="container my-5">
-        <h2 className="text-center mb-4 text-white">📈 أعلى 3 قيم ADC</h2>
+        <h2 className="text-center mb-4 text-white">📈اعلي قيم لقوه العضلات</h2>
         <table className="table table-hover shadow-lg">
           <thead className="bg-info text-white">
             <tr>

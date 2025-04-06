@@ -194,7 +194,7 @@ const Four = () => {
             textAlign: "center",
           }}
         >
-          <h4 style={{ fontWeight: "bold", color: "#333" }}>أعلى 3 قيم لـ ADC:</h4>
+          <h4 style={{ fontWeight: "bold", color: "#333" }}>اعلي 3 قيم لقوه العضلات :</h4>
           <table
             style={{
               margin: "0 auto",
