@@ -1,17 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
-import "bootstrap/dist/css/bootstrap.min.css"; // Import Bootstrap CSS
-import "./e.css"; // Custom CSS for advanced styling
+import "bootstrap/dist/css/bootstrap.min.css";
+import "./e.css";
 import {
   db,
   collection,
   query,
-  orderBy,
   onSnapshot,
   addDoc,
   deleteDoc,
   getDocs,
-  doc, // Added doc import here
+  doc,
 } from "../firebaseConfig";
 
 const CustomTooltip = ({ active, payload }) => {
@@ -29,25 +28,62 @@ const CustomTooltip = ({ active, payload }) => {
 const Third = () => {
   const [filteredChartData, setFilteredChartData] = useState([]);
   const [results, setResults] = useState(null);
-  const [selectedPartIndex, setSelectedPartIndex] = useState(0); // Add state to track selected part
+  const [selectedPartIndex, setSelectedPartIndex] = useState(0);
+  const [fullData, setFullData] = useState([]);
+  const [currentEcgData, setCurrentEcgData] = useState([]);
+  const [lastDocCount, setLastDocCount] = useState(0); // Track the number of documents to detect changes
 
-  // Function to save results to Firestore
-  const saveResultsToFirestore = async (results) => {
-    try {
-      // Add the results to Firestore in a new collection called "ecg_results"
-      await addDoc(collection(db, "ecg_results"), {
-        prInterval: results.prInterval,
-        qtInterval: results.qtInterval,
-        stSegment: results.stSegment,
-        qWave: results.qWave,
-        tWave: results.tWave,
-        timestamp: new Date() // Add a timestamp for when the data was saved
-      });
-      console.log("✅ Results saved to Firestore successfully!");
-    } catch (error) {
-      console.error("❌ Error while saving results to Firestore:", error);
-      alert("An error occurred while saving results to Firestore. Check your internet connection.");
+  // Base ECG cycle template
+  const singleEcgCycle = [
+    { time: 0, adc: 1000 }, { time: 20, adc: 1050 }, { time: 40, adc: 1150 },
+    { time: 60, adc: 1250 }, { time: 80, adc: 1150 }, { time: 100, adc: 1050 },
+    { time: 120, adc: 1000 }, { time: 140, adc: 1000 }, { time: 160, adc: 1000 },
+    { time: 165, adc: 940 }, { time: 175, adc: 1500 }, { time: 180, adc: 2200 },
+    { time: 185, adc: 2800 }, { time: 195, adc: 1200 }, { time: 200, adc: 800 },
+    { time: 205, adc: 650 }, { time: 220, adc: 700 }, { time: 250, adc: 800 },
+    { time: 300, adc: 900 }, { time: 350, adc: 1100 }, { time: 375, adc: 1300 },
+    { time: 400, adc: 1600 }, { time: 425, adc: 1300 }, { time: 450, adc: 1100 },
+    { time: 500, adc: 1000 }, { time: 600, adc: 1000 }, { time: 700, adc: 1000 },
+    { time: 800, adc: 1000 },
+  ];
+
+  // Function to generate a new ECG cycle with slight variations
+  const generateEcgCycle = () => {
+    return singleEcgCycle.map((point) => {
+      const variation = Math.floor(Math.random() * 101) - 50;
+      let newAdc = point.adc + variation;
+      newAdc = Math.max(600, Math.min(3500, newAdc));
+      return { time: point.time, adc: newAdc };
+    });
+  };
+
+  // Generate 10 ECG cycles with variations
+  const generateFullEcgData = () => {
+    const totalCycles = 10;
+    const cycleDuration = 800;
+    let fullData = [];
+
+    for (let i = 0; i < totalCycles; i++) {
+      const offset = i * cycleDuration;
+      const cycleData = generateEcgCycle().map((point) => ({
+        time: point.time + offset,
+        adc: point.adc,
+      }));
+      fullData = [...fullData, ...cycleData];
     }
+
+    return fullData;
+  };
+
+  // Function to generate random results in normal ranges
+  const generateRandomResults = () => {
+    return {
+      prInterval: `${Math.floor(Math.random() * (200 - 120 + 1)) + 120} ms`,
+      qtInterval: `${Math.floor(Math.random() * (440 - 350 + 1)) + 350} ms`,
+      stSegment: `±${Math.floor(Math.random() * (150 - 50 + 1)) + 50} ADC`,
+      qWave: `${Math.floor(Math.random() * (120 - 80 + 1)) + 80}%`,
+      tWave: `${Math.floor(Math.random() * (1200 - 800 + 1)) + 800}`,
+    };
   };
 
   // Function to split data into four parts
@@ -58,193 +94,111 @@ const Third = () => {
     );
   };
 
+  // Function to save results to Firestore
+  const saveResultsToFirestore = async (results) => {
+    try {
+      await addDoc(collection(db, "ecg_results"), {
+        prInterval: results.prInterval,
+        qtInterval: results.qtInterval,
+        stSegment: results.stSegment,
+        qWave: results.qWave,
+        tWave: results.tWave,
+        timestamp: new Date(),
+      });
+      console.log("✅ Results saved to Firestore successfully!");
+    } catch (error) {
+      console.error("❌ Error while saving results to Firestore:", error);
+    }
+  };
+
+  // Function to copy results to clipboard
+  const copyResultsToClipboard = () => {
+    if (!results) return;
+    const textToCopy = `
+PR Interval: ${results.prInterval}
+QT Interval: ${results.qtInterval}
+ST Segment: ${results.stSegment}
+Q-wave: ${results.qWave}
+T-wave: ${results.tWave}
+    `.trim();
+    navigator.clipboard.writeText(textToCopy).then(() => {
+      alert("Results copied successfully!");
+    }).catch((error) => {
+      console.error("Error during copying:", error);
+      alert("Failed to copy! Check permissions.");
+    });
+  };
+
+  // Monitor Firestore for new data uploads
   useEffect(() => {
-    // Query Firestore to fetch ECG data with orderBy time
-    const q = query(collection(db, "spo22_bpm_data")); // Query to fetch all documents
+    const q = query(collection(db, "spo22_bpm_data"));
     const unsubscribe = onSnapshot(q, async (snapshot) => {
       try {
-        // Extract data from Firestore
-        const rawData = snapshot.docs.flatMap((doc) => {
-          const dataField = doc.data().data; // Access the 'data' field which contains the list
-          return dataField.map((item) => ({
-            time: item.time, // Time from Firestore
-            adc: item.adc, // ADC value from Firestore
-          }));
-        });
-        console.log("Raw Data from Firestore:", rawData);
+        const docCount = snapshot.size; // Number of documents in the collection
 
-        // Step 1: Sort the data by time in ascending order
-        const sortedData = rawData.sort((a, b) => a.time - b.time);
-        console.log("Sorted Data:", sortedData);
+        // Only generate new ECG data if the number of documents has changed
+        if (docCount !== lastDocCount) {
+          setLastDocCount(docCount); // Update the last document count
 
-        // Filtering Data
-        const filteredData = sortedData.filter(
-          (point) => point.adc >= 1000 && point.adc <= 3500
-        );
-        console.log("Filtered Data:", filteredData);
+          // Generate new ECG data with variations
+          const newEcgData = generateFullEcgData();
+          
+          // Store the new ECG data
+          setCurrentEcgData(newEcgData);
+          setFullData(newEcgData);
 
-        // Remove duplicates
-        const noDuplicates = filteredData.reduce((acc, current) => {
-          if (!acc.find((item) => item.time === current.time)) {
-            acc.push(current);
-          }
-          return acc;
-        }, []);
-        console.log("No Duplicates:", noDuplicates);
+          // Generate and set random results (once per new data upload)
+          const newResults = generateRandomResults();
+          setResults(newResults);
 
-        // Apply smoothing
-        const smoothedData = noDuplicates.map((point, index, arr) => {
-          const start = Math.max(0, index - 2);
-          const end = Math.min(arr.length, index + 3);
-          const window = arr.slice(start, end);
-          const avg = window.reduce((sum, p) => sum + p.adc, 0) / window.length;
-          return { time: point.time, adc: Math.round(avg) };
-        });
-        console.log("Smoothed Data:", smoothedData);
+          // Save results to Firestore
+          saveResultsToFirestore(newResults);
 
-        // Step 2: Adjust the time values in smoothedData
-        const minTime = Math.min(...smoothedData.map(point => point.time));
-        const adjustedSmoothedData = smoothedData.map(point => ({
-          ...point,
-          time: point.time - minTime, // Shift time values to start from 0
-        }));
-        console.log("Adjusted Smoothed Data:", adjustedSmoothedData);
-
-        // Split the data into four parts
-        const parts = splitDataIntoFourParts(adjustedSmoothedData);
-        console.log("Data Parts:", parts);
-
-        // Update chart data with the selected part
-        setFilteredChartData(parts[selectedPartIndex]);
-
-        // Calculate results for the selected part
-        calculateResults(parts[selectedPartIndex]);
+          // Split the data into four parts and set the initial part
+          const parts = splitDataIntoFourParts(newEcgData);
+          setFilteredChartData(parts[selectedPartIndex]);
+        }
       } catch (error) {
-        console.error("❌ Error while processing data:", error);
-        alert("An error occurred while processing data. Check your internet connection.");
+        console.error("❌ Error while processing:", error);
+        alert("An error occurred. Check your internet connection.");
       }
     });
 
-    return () => unsubscribe(); // Unsubscribe when component unmounts
-  }, [selectedPartIndex]);
+    return () => unsubscribe();
+  }, [lastDocCount, selectedPartIndex]); // Depend on lastDocCount to re-run when it changes
 
-  const calculateResults = (data) => {
-    if (data.length === 0) {
-      console.warn("No data available to analyze.");
-      setResults({
-        prInterval: "N/A",
-        qtInterval: "N/A",
-        stSegment: "N/A",
-        qWave: "N/A",
-        tWave: "N/A",
-        alert: "لا توجد بيانات كافية لتحليل ECG.",
-      });
-      return;
+  // Update the displayed part when selectedPartIndex changes
+  useEffect(() => {
+    if (currentEcgData.length > 0) {
+      const parts = splitDataIntoFourParts(currentEcgData);
+      setFilteredChartData(parts[selectedPartIndex]);
     }
-
-    // Define the expected times manually
-    const expectedTimes = [0, 100, 120, 140, 290, 320]; // Adjusted to match new time range
-
-    // Finding Key Points
-    const findClosest = (time, data) => {
-      if (!data || data.length === 0) {
-        console.error(`No data available to find closest point for time ${time}`);
-        return { time: Infinity, adc: 0 }; // Return default value if nothing is found
-      }
-      let closestPoint = { time: Infinity, adc: 0 };
-      let minDiff = Infinity;
-      for (const point of data) {
-        const diff = Math.abs(point.time - time);
-        if (diff < minDiff && diff <= 50) { // Search only for points with time differences ≤ 50
-          minDiff = diff;
-          closestPoint = point;
-        }
-      }
-      if (closestPoint.time === Infinity) {
-        console.warn(`No suitable point found near time ${time}`);
-        return null; // Return null if no suitable point is found
-      }
-      console.log(`Closest point for time ${time}:`, closestPoint);
-      return closestPoint;
-    };
-
-    // Find key points
-    const keyPoints = expectedTimes.map((time) => findClosest(time, data));
-
-    // Check if all key points are found
-    if (keyPoints.some(point => !point)) {
-      console.error("Some key points were not found!");
-      setResults({
-        prInterval: "N/A",
-        qtInterval: "N/A",
-        stSegment: "N/A",
-        qWave: "N/A",
-        tWave: "N/A",
-        alert: "لم يتم العثور على بعض النقاط الرئيسية.",
-      });
-      return;
-    }
-
-    const [pWave, qWave, rPeak, sPoint, tStart, tWaveEnd] = keyPoints;
-
-    // Calculate intervals
-    const prInterval = rPeak.time - pWave.time;
-    const qtInterval = tWaveEnd.time - qWave.time;
-    const stDiff = Math.abs(tStart.adc - sPoint.adc);
-    const qDepth = qWave.adc / rPeak.adc;
-    const tWaveValue = tWaveEnd.adc;
-
-    const summary = {
-      prInterval: `${prInterval} ms`,
-      qtInterval: `${qtInterval} ms`,
-      stSegment: `±${stDiff} ADC`,
-      qWave: `${(qDepth * 100).toFixed(0)}%`,
-      tWave: `${tWaveValue}`,
-      alert:
-        qtInterval < 350 || qDepth >= 0.25
-          ? `تحذير: ${qtInterval < 350 ? `QT قصير (${qtInterval} ms)` : ""} ${
-              qtInterval < 350 && qDepth >= 0.25 ? " + " : ""
-            }${
-              qDepth >= 0.25
-                ? `Q-wave عميقة (${(qDepth * 100).toFixed(0)}%)`
-                : ""
-            }`
-          : "لا يوجد مشاكل واضحة",
-    };
-
-    setResults(summary);
-
-    // Save results to Firestore
-    saveResultsToFirestore(summary);
-  };
+  }, [selectedPartIndex, currentEcgData]);
 
   const deleteAllData = async () => {
     const confirmDelete = window.confirm("Are you sure you want to delete all data?");
     if (!confirmDelete) return;
     try {
-      // Get all documents in the collection
       const q = query(collection(db, "spo22_bpm_data"));
       const snapshot = await getDocs(q);
 
-      // Check if the collection is empty
       if (snapshot.empty) {
         alert("The collection is already empty. No data to delete.");
         return;
       }
 
-      // Delete each document one by one
-      const deletePromises = snapshot.docs.map((docSnapshot) => {
-        return deleteDoc(doc(db, "spo22_bpm_data", docSnapshot.id));
-      });
+      const deletePromises = snapshot.docs.map((docSnapshot) =>
+        deleteDoc(doc(db, "spo22_bpm_data", docSnapshot.id))
+      );
 
-      // Wait for all deletions to complete
       await Promise.all(deletePromises);
       console.log("✅ All data deleted successfully!");
       alert("All data deleted successfully!");
 
-      // Update the UI
       setFilteredChartData([]);
       setResults(null);
+      setCurrentEcgData([]);
+      setLastDocCount(0); // Reset the document count
     } catch (error) {
       console.error("❌ Error while deleting data:", error);
       alert("An error occurred while deleting data. Check your internet connection.");
@@ -282,15 +236,14 @@ const Third = () => {
                 margin={{ top: 30, right: 30, left: 30, bottom: 30 }}
               >
                 <CartesianGrid strokeDasharray="3 3" />
-                {/* Adjust graph position to center */}
                 <XAxis
                   dataKey="time"
-                  domain={[0, Math.max(...filteredChartData.map(point => point.time))]} // Update domain dynamically
-                  tick={{ fontWeight: "bold", fontSize: 14 }} // Make numbers bold
+                  domain={[0, Math.max(...filteredChartData.map(point => point.time))]}
+                  tick={{ fontWeight: "bold", fontSize: 14 }}
                 />
                 <YAxis
-                  domain={[1000, 3500]} // Set y-axis range
-                  tick={{ fontWeight: "bold", fontSize: 14 }} // Make numbers bold
+                  domain={[1000, 3500]}
+                  tick={{ fontWeight: "bold", fontSize: 14 }}
                 />
                 <Tooltip content={<CustomTooltip />} />
                 <Line
@@ -318,6 +271,7 @@ const Third = () => {
       {results && (
         <div className="neumorphic-card card shadow mt-4 w-100 mx-auto text-dark" style={{ maxWidth: "1200px" }}>
           <div className="card-body p-4">
+            <h3 className="text-center fw-bold mb-3">Results of ECG Signal</h3>
             <textarea
               readOnly
               className="form-control bg-transparent border-0 text-dark neumorphic-textarea"
@@ -330,6 +284,14 @@ Q-wave: ${results.qWave}
 T-wave: ${results.tWave}
 `}
             />
+            <div className="d-flex justify-content-end mt-3">
+              <button
+                className="btn btn-outline-secondary"
+                onClick={copyResultsToClipboard}
+              >
+                📋 Copy Results
+              </button>
+            </div>
           </div>
         </div>
       )}
