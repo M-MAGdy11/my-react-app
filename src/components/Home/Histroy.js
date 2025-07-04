@@ -20,7 +20,6 @@ const HistoryPage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Blood Pressure History
         const bloodPressureSnapshot = await getDocs(collection(db, "blood_pressure_history"));
         const bloodPressureReadings = bloodPressureSnapshot.docs.map((doc) => ({
           id: doc.id,
@@ -29,7 +28,6 @@ const HistoryPage = () => {
         }));
         setBloodPressureData(bloodPressureReadings);
 
-        // ECG Analysis History
         const ecgAnalysisSnapshot = await getDocs(collection(db, "ecg_results"));
         const ecgAnalysisReadings = ecgAnalysisSnapshot.docs.map((doc) => ({
           id: doc.id,
@@ -38,7 +36,6 @@ const HistoryPage = () => {
         }));
         setEcgAnalysisData(ecgAnalysisReadings);
 
-        // Muscle Activity History
         const muscleActivitySnapshot = await getDocs(collection(db, "muscle_activity_history"));
         const muscleActivityReadings = muscleActivitySnapshot.docs.map((doc) => ({
           id: doc.id,
@@ -47,7 +44,6 @@ const HistoryPage = () => {
         }));
         setMuscleActivityData(muscleActivityReadings);
 
-        // Extract max hemoglobin and glucose
         const maxHemoglobinValue = Math.max(...bloodPressureReadings.map((record) => record.hb || 0));
         setMaxHemoglobin(maxHemoglobinValue);
 
@@ -67,21 +63,18 @@ const HistoryPage = () => {
     if (!confirmDelete) return;
 
     try {
-      // Delete Blood Pressure History
       const bloodPressureQuery = query(collection(db, "blood_pressure_history"));
       const bloodPressureSnapshot = await getDocs(bloodPressureQuery);
       const bloodPressureDeletePromises = bloodPressureSnapshot.docs.map((docSnapshot) =>
         deleteDoc(doc(db, "blood_pressure_history", docSnapshot.id))
       );
 
-      // Delete ECG Analysis History
       const ecgAnalysisQuery = query(collection(db, "ecg_results"));
       const ecgAnalysisSnapshot = await getDocs(ecgAnalysisQuery);
       const ecgAnalysisDeletePromises = ecgAnalysisSnapshot.docs.map((docSnapshot) =>
         deleteDoc(doc(db, "ecg_results", docSnapshot.id))
       );
 
-      // Delete Muscle Activity History
       const muscleActivityQuery = query(collection(db, "muscle_activity_history"));
       const muscleActivitySnapshot = await getDocs(muscleActivityQuery);
       const muscleActivityDeletePromises = muscleActivitySnapshot.docs.map((docSnapshot) =>
@@ -108,12 +101,32 @@ const HistoryPage = () => {
 
   return (
     <div className="history-page min-vh-100">
+      <style>
+        {`
+          .pretty-box {
+            background: linear-gradient(to right, #ff416c, #ff4b2b);
+            border: 2px solid gold;
+            border-radius: 12px;
+            padding: 10px 25px;
+            display: inline-block;
+            font-weight: bold;
+            font-size: 22px;
+            color: white;
+            margin: 30px auto;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
+            text-align: center;
+          }
+        `}
+      </style>
+
       <div className="container text-center py-5">
-        <h1 className="text-white">Data History</h1>
+        <div className="pretty-box">📂 Data History</div>
       </div>
 
       <div className="container my-5">
-        <h2 className="text-center mb-4 text-white">🩺 Blood Pressure History</h2>
+        <div className="text-center">
+          <div className="pretty-box">🩺 Blood Pressure History</div>
+        </div>
         <table className="table table-hover shadow-lg">
           <thead className="bg-primary text-white">
             <tr>
@@ -153,7 +166,9 @@ const HistoryPage = () => {
       </div>
 
       <div className="container my-5">
-        <h2 className="text-center mb-4 text-white">📊 ECG Analysis History</h2>
+        <div className="text-center">
+          <div className="pretty-box">📊 ECG Analysis History</div>
+        </div>
         <table className="table table-hover shadow-lg">
           <thead className="bg-success text-white">
             <tr>
@@ -187,7 +202,9 @@ const HistoryPage = () => {
       </div>
 
       <div className="container my-5">
-        <h2 className="text-center mb-4 text-white">💪 Muscle Activity History</h2>
+        <div className="text-center">
+          <div className="pretty-box">💪 Muscle Activity History</div>
+        </div>
         <table className="table table-hover shadow-lg">
           <thead className="bg-warning text-white">
             <tr>

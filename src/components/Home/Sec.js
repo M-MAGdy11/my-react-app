@@ -9,7 +9,7 @@ import { getDocs, deleteDoc, doc } from "firebase/firestore";
 const Sec = () => {
   const [data, setData] = useState([]);
   const [mostCommonBPM, setMostCommonBPM] = useState([]);
-  const [mostCommonSpO2, setMostCommonSpO2] = useState([]);
+  const [mostCommonSpO2, setMostCommonSpO2] = useState(null);
   const [selectedView, setSelectedView] = useState("");
   const [age, setAge] = useState("");
   const [weight, setWeight] = useState("");
@@ -55,14 +55,11 @@ const Sec = () => {
         .sort((a, b) => b[1] - a[1])
         .slice(0, 3)
         .filter((_, index) => index === 0 || index === 2)
-        .map((item) => parseFloat(item[0]).toFixed(1));
-      const sortedSpO2 = Object.entries(spo2Counts)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 3)
-        .filter((_, index) => index === 0 || index === 2)
-        .map((item) => parseFloat(item[0]).toFixed(1));
-      setMostCommonBPM(sortedBPM);
-      setMostCommonSpO2(sortedSpO2);
+        .map((item) => parseFloat(item[0]));
+      const bpmAverage = sortedBPM.length > 0 ? (sortedBPM.reduce((sum, val) => sum + val, 0) / sortedBPM.length).toFixed(1) : null;
+      const maxSpO2 = readings.length > 0 ? Math.max(...readings.map((entry) => entry.spo2)).toFixed(1) : null;
+      setMostCommonBPM({ range: sortedBPM.map(val => val.toFixed(1)).join(", "), average: bpmAverage });
+      setMostCommonSpO2(maxSpO2);
     }
   };
 
@@ -98,15 +95,15 @@ const Sec = () => {
     let calculatedSBP = 120 + 0.3 * age + 0.3 * weight - 0.4 * heartRate - 0.2 * SpO2;
     let calculatedDBP = 80 + 0.3 * age + 0.1 * weight - 0.2 * heartRate - 0.1 * SpO2;
     calculatedSBP = Math.max(90, Math.min(calculatedSBP, 180)).toFixed(1);
-    calculatedDBP = Math.max(60, Math.min(calculatedDBP, 120)).toFixed(1);
+ calculatedDBP = Math.max(60, Math.min(calculatedDBP, 120)).toFixed(1);
     setSBP(calculatedSBP);
     setDBP(calculatedDBP);
     try {
       await addDoc(collection(db, "blood_pressure_history"), {
         sbp: calculatedSBP,
         dbp: calculatedDBP,
-        bpm: mostCommonBPM.join(", "),
-        spo2: mostCommonSpO2.join(", "),
+        bpm: mostCommonBPM.range || mostCommonBPM.join(", "),
+        spo2: mostCommonSpO2 || 0,
         hb: maxHb || 0,
         glucose: avgGlucose || 0,
         age: parseInt(age),
@@ -198,7 +195,7 @@ const Sec = () => {
           className="btn btn-outline-light my-2 w-100"
           onClick={() => setSelectedView("common")}
         >
-          📊 Most Frequent Values
+          📊 Heart Rate and Oxygen Levels
         </button>
         <button
           className="btn btn-outline-light my-2 w-100"
@@ -340,21 +337,21 @@ const Sec = () => {
         )}
         {selectedView === "common" && (
           <div className="card p-4">
-            <h3>📊 Most Frequent Values</h3>
+            <h3>📊 Heart Rate and Oxygen Levels</h3>
             <p className="text-dark fw-bold fs-4">
-              Most Common Heart Rates (Range): {mostCommonBPM.join(", ")}
+              Heart Rate (Average: {mostCommonBPM.average || "Not available"}, Range: {mostCommonBPM.range || "Not available"})
               <button
                 className="btn btn-outline-secondary btn-sm ms-2"
-                onClick={() => copyNumberToClipboard(mostCommonBPM.join(", "))}
+                onClick={() => copyNumberToClipboard(`Average: ${mostCommonBPM.average || "Not available"}, Range: ${mostCommonBPM.range || "Not available"}`)}
               >
                 📋
               </button>
             </p>
             <p className="text-dark fw-bold fs-4">
-              Most Common Oxygen Levels (Range): {mostCommonSpO2.join(", ")}%
+              Oxygen Saturation: {mostCommonSpO2 || "Not available"}%
               <button
                 className="btn btn-outline-secondary btn-sm ms-2"
-                onClick={() => copyNumberToClipboard(mostCommonSpO2.join(", "))}
+                onClick={() => copyNumberToClipboard(mostCommonSpO2 || "Not available")}
               >
                 📋
               </button>
@@ -377,7 +374,7 @@ const Sec = () => {
               Glucose Level: {avgGlucose !== null ? `${avgGlucose} mg/dL` : "Not available"}
               <button
                 className="btn btn-outline-secondary btn-sm ms-2"
-                onClick={() => copyNumberToClipboard(avgGlucose)}
+                onClick={() => copyNumberToClipboard(avgGlucose || "Not available")}
               >
                 📋
               </button>

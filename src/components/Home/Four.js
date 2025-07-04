@@ -30,8 +30,13 @@ const Four = () => {
         return dataField || [];
       });
       const sortedData = rawData.sort((a, b) => a.time - b.time);
-      setChartData(sortedData);
-      const top3Values = [...sortedData]
+      const minTime = Math.min(...sortedData.map((d) => d.time));
+      const normalizedData = sortedData.map((item) => ({
+        ...item,
+        time: (item.time - minTime) / 1000, // Normalize time to start from 0 and convert to seconds
+      }));
+      setChartData(normalizedData);
+      const top3Values = [...normalizedData]
         .sort((a, b) => b.adc - a.adc)
         .slice(0, 3);
       storeTopMuscleValues(top3Values);
@@ -105,7 +110,7 @@ const Four = () => {
       .slice(0, 3);
 
     const formattedValues = top3Values
-      .map((item, index) => `Value ${index + 1}: Time = ${item.time} ms, Muscle Activity = ${item.adc}`)
+      .map((item, index) => `Value ${index + 1}: Time = ${item.time} s, Muscle Activity = ${item.adc}`)
       .join("\n");
 
     navigator.clipboard.writeText(formattedValues).then(() => {
@@ -193,7 +198,7 @@ const Four = () => {
                   .map((item, index) => (
                     <tr key={index} style={{ background: index % 2 === 0 ? "#f9f9f9" : "#fff" }}>
                       <td style={{ padding: "10px 15px", border: "1px solid #ddd", color: "#333" }}>
-                        {item.time} ms
+                        {item.time} s
                       </td>
                       <td style={{ padding: "10px 15px", border: "1px solid #ddd", color: "#333" }}>
                         {item.adc}
@@ -269,11 +274,11 @@ const Four = () => {
                           background: "#fff",
                           border: "1px solid #ddd",
                           borderRadius: "5px",
-                          boxShadow: "0 2px 4px rgba(0entieth: 0, 0, 0, 0.1)",
+                          boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
                         }}
                       >
                         <p style={{ fontWeight: "bold", color: "#000" }}>
-                          Time: {payload[0].payload.time} ms
+                          Time: {payload[0].payload.time} s
                         </p>
                         <p style={{ color: "#000" }}>
                           Muscle Activity: {payload[0].payload.adc}

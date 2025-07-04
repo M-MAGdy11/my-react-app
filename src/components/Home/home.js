@@ -11,9 +11,9 @@ const Home = () => {
 
   const cardData = [
     {
-      title: "🩸 Blood Oxygen Measurement",
+      title: "🩸 Human Health",
       description:
-        "The same technology can be used to measure glucose levels, heart rate, hemoglobin, and blood pressure.",
+        "Measure blood oxygen levels, glucose levels, heart rate, hemoglobin, and blood pressure.",
       buttonText: "Discover More",
       link: "/s",
     },
@@ -44,7 +44,7 @@ const Home = () => {
       description: "Instant access to AI-powered medical assistance and health guidance.",
       additionalInfo: "Chat with our virtual health assistant for personalized advice.",
       buttonText: "Chat Now",
-      link: "https://medicalchatbotyae5waty.streamlit.app/",
+      link: "https://lamasmart.streamlit.app/",
     },
   ];
 
