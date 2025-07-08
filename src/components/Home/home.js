@@ -46,6 +46,14 @@ const Home = () => {
       buttonText: "Chat Now",
       link: "https://lamasmart.streamlit.app/",
     },
+    {
+      title: "📹 Video Guide",
+      description:
+        "Watch our comprehensive video guide to learn more about using the Human Health Monitoring System.",
+      additionalInfo: "Perfect for getting started and understanding system features.",
+      buttonText: "Watch Now",
+      link: "https://youtu.be/TvMDmNtNPVM?si=OpgBUvEmAPUeU1bT",
+    },
   ];
 
   return (
@@ -148,8 +156,8 @@ const Home = () => {
         </Row>
 
         <Row className="justify-content-center mt-5 g-4">
-          {cardData.slice(3, 5).map((card, index) => (
-            <Col md={6} key={index + 3}>
+          {cardData.slice(3, 6).map((card, index) => (
+            <Col md={4} key={index + 3}>
               <Card
                 className="shadow-lg h-100 d-flex flex-column justify-content-between"
                 style={{

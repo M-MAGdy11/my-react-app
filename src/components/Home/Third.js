@@ -2,16 +2,7 @@ import React, { useEffect, useState } from "react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./e.css";
-import {
-  db,
-  collection,
-  query,
-  onSnapshot,
-  addDoc,
-  deleteDoc,
-  getDocs,
-  doc,
-} from "../firebaseConfig";
+import { db, collection, query, addDoc, deleteDoc, getDocs, doc } from "../firebaseConfig";
 
 const CustomTooltip = ({ active, payload }) => {
   if (active && payload && payload.length) {
@@ -30,34 +21,22 @@ const Third = () => {
   const [results, setResults] = useState(null);
   const [selectedPartIndex, setSelectedPartIndex] = useState(0);
   const [fullData, setFullData] = useState([]);
-  const [currentEcgData, setCurrentEcgData] = useState([]);
-  const [lastDocCount, setLastDocCount] = useState(0); // Track the number of documents to detect changes
 
-  // Base ECG cycle template
+  // Fixed ECG cycle template for a healthy person
   const singleEcgCycle = [
-    { time: 0, adc: 1000 }, { time: 20, adc: 1050 }, { time: 40, adc: 1150 },
-    { time: 60, adc: 1250 }, { time: 80, adc: 1150 }, { time: 100, adc: 1050 },
+    { time: 0, adc: 1000 }, { time: 20, adc: 1020 }, { time: 40, adc: 1050 },
+    { time: 60, adc: 1100 }, { time: 80, adc: 1050 }, { time: 100, adc: 1020 },
     { time: 120, adc: 1000 }, { time: 140, adc: 1000 }, { time: 160, adc: 1000 },
-    { time: 165, adc: 940 }, { time: 175, adc: 1500 }, { time: 180, adc: 2200 },
-    { time: 185, adc: 2800 }, { time: 195, adc: 1200 }, { time: 200, adc: 800 },
-    { time: 205, adc: 650 }, { time: 220, adc: 700 }, { time: 250, adc: 800 },
-    { time: 300, adc: 900 }, { time: 350, adc: 1100 }, { time: 375, adc: 1300 },
-    { time: 400, adc: 1600 }, { time: 425, adc: 1300 }, { time: 450, adc: 1100 },
+    { time: 165, adc: 950 }, { time: 175, adc: 1400 }, { time: 180, adc: 2000 },
+    { time: 185, adc: 2500 }, { time: 195, adc: 1200 }, { time: 200, adc: 900 },
+    { time: 205, adc: 800 }, { time: 220, adc: 850 }, { time: 250, adc: 900 },
+    { time: 300, adc: 950 }, { time: 350, adc: 1000 }, { time: 375, adc: 1100 },
+    { time: 400, adc: 1200 }, { time: 425, adc: 1100 }, { time: 450, adc: 1000 },
     { time: 500, adc: 1000 }, { time: 600, adc: 1000 }, { time: 700, adc: 1000 },
     { time: 800, adc: 1000 },
   ];
 
-  // Function to generate a new ECG cycle with slight variations
-  const generateEcgCycle = () => {
-    return singleEcgCycle.map((point) => {
-      const variation = Math.floor(Math.random() * 101) - 50;
-      let newAdc = point.adc + variation;
-      newAdc = Math.max(600, Math.min(3500, newAdc));
-      return { time: point.time, adc: newAdc };
-    });
-  };
-
-  // Generate 10 ECG cycles with variations
+  // Generate fixed ECG data by repeating the single cycle
   const generateFullEcgData = () => {
     const totalCycles = 10;
     const cycleDuration = 800;
@@ -65,7 +44,7 @@ const Third = () => {
 
     for (let i = 0; i < totalCycles; i++) {
       const offset = i * cycleDuration;
-      const cycleData = generateEcgCycle().map((point) => ({
+      const cycleData = singleEcgCycle.map((point) => ({
         time: point.time + offset,
         adc: point.adc,
       }));
@@ -75,18 +54,18 @@ const Third = () => {
     return fullData;
   };
 
-  // Function to generate random results in normal ranges
-  const generateRandomResults = () => {
+  // Fixed results for a healthy person
+  const generateFixedResults = () => {
     return {
-      prInterval: `${Math.floor(Math.random() * (200 - 120 + 1)) + 120} ms`,
-      qtInterval: `${Math.floor(Math.random() * (440 - 350 + 1)) + 350} ms`,
-      stSegment: `±${Math.floor(Math.random() * (150 - 50 + 1)) + 50} ADC`,
-      qWave: `${Math.floor(Math.random() * (120 - 80 + 1)) + 80}%`,
-      tWave: `${Math.floor(Math.random() * (1200 - 800 + 1)) + 800}`,
+      prInterval: "160 ms",
+      qtInterval: "400 ms",
+      stSegment: "±50 ADC",
+      qWave: "20%",
+      tWave: "300",
     };
   };
 
-  // Function to split data into four parts
+  // Split data into four parts
   const splitDataIntoFourParts = (data) => {
     const partSize = Math.ceil(data.length / 4);
     return Array.from({ length: 4 }, (_, i) =>
@@ -94,7 +73,7 @@ const Third = () => {
     );
   };
 
-  // Function to save results to Firestore
+  // Save results to Firestore
   const saveResultsToFirestore = async (results) => {
     try {
       await addDoc(collection(db, "ecg_results"), {
@@ -111,7 +90,33 @@ const Third = () => {
     }
   };
 
-  // Function to copy results to clipboard
+  // Delete all data from Firestore
+  const deleteAllData = async () => {
+    const confirmDelete = window.confirm("Are you sure you want to delete all data?");
+    if (!confirmDelete) return;
+    try {
+      const q = query(collection(db, "ecg_results"));
+      const snapshot = await getDocs(q);
+
+      if (snapshot.empty) {
+        alert("The collection is already empty. No data to delete.");
+        return;
+      }
+
+      const deletePromises = snapshot.docs.map((docSnapshot) =>
+        deleteDoc(doc(db, "ecg_results", docSnapshot.id))
+      );
+
+      await Promise.all(deletePromises);
+      console.log("✅ All data deleted successfully!");
+      alert("All data deleted successfully!");
+    } catch (error) {
+      console.error("❌ Error while deleting data:", error);
+      alert("An error occurred while deleting data. Check your internet connection.");
+    }
+  };
+
+  // Copy results to clipboard
   const copyResultsToClipboard = () => {
     if (!results) return;
     const textToCopy = `
@@ -129,81 +134,23 @@ T-wave: ${results.tWave}
     });
   };
 
-  // Monitor Firestore for new data uploads
+  // Load fixed data on component mount
   useEffect(() => {
-    const q = query(collection(db, "spo22_bpm_data"));
-    const unsubscribe = onSnapshot(q, async (snapshot) => {
-      try {
-        const docCount = snapshot.size; // Number of documents in the collection
+    // Generate fixed ECG data
+    const newEcgData = generateFullEcgData();
+    setFullData(newEcgData);
 
-        // Only generate new ECG data if the number of documents has changed
-        if (docCount !== lastDocCount) {
-          setLastDocCount(docCount); // Update the last document count
+    // Set fixed results
+    const newResults = generateFixedResults();
+    setResults(newResults);
 
-          // Generate new ECG data with variations
-          const newEcgData = generateFullEcgData();
-          
-          // Store the new ECG data
-          setCurrentEcgData(newEcgData);
-          setFullData(newEcgData);
+    // Save results to Firestore
+    saveResultsToFirestore(newResults);
 
-          // Generate and set random results (once per new data upload)
-          const newResults = generateRandomResults();
-          setResults(newResults);
-
-          // Save results to Firestore
-          saveResultsToFirestore(newResults);
-
-          // Split the data into four parts and set the initial part
-          const parts = splitDataIntoFourParts(newEcgData);
-          setFilteredChartData(parts[selectedPartIndex]);
-        }
-      } catch (error) {
-        console.error("❌ Error while processing:", error);
-        alert("An error occurred. Check your internet connection.");
-      }
-    });
-
-    return () => unsubscribe();
-  }, [lastDocCount, selectedPartIndex]); // Depend on lastDocCount to re-run when it changes
-
-  // Update the displayed part when selectedPartIndex changes
-  useEffect(() => {
-    if (currentEcgData.length > 0) {
-      const parts = splitDataIntoFourParts(currentEcgData);
-      setFilteredChartData(parts[selectedPartIndex]);
-    }
-  }, [selectedPartIndex, currentEcgData]);
-
-  const deleteAllData = async () => {
-    const confirmDelete = window.confirm("Are you sure you want to delete all data?");
-    if (!confirmDelete) return;
-    try {
-      const q = query(collection(db, "spo22_bpm_data"));
-      const snapshot = await getDocs(q);
-
-      if (snapshot.empty) {
-        alert("The collection is already empty. No data to delete.");
-        return;
-      }
-
-      const deletePromises = snapshot.docs.map((docSnapshot) =>
-        deleteDoc(doc(db, "spo22_bpm_data", docSnapshot.id))
-      );
-
-      await Promise.all(deletePromises);
-      console.log("✅ All data deleted successfully!");
-      alert("All data deleted successfully!");
-
-      setFilteredChartData([]);
-      setResults(null);
-      setCurrentEcgData([]);
-      setLastDocCount(0); // Reset the document count
-    } catch (error) {
-      console.error("❌ Error while deleting data:", error);
-      alert("An error occurred while deleting data. Check your internet connection.");
-    }
-  };
+    // Split the data into four parts and set the initial part
+    const parts = splitDataIntoFourParts(newEcgData);
+    setFilteredChartData(parts[selectedPartIndex]);
+  }, [selectedPartIndex]);
 
   return (
     <div className="min-vh-100 d-flex flex-column align-items-center justify-content-center gradient-bg py-5">
@@ -242,7 +189,7 @@ T-wave: ${results.tWave}
                   tick={{ fontWeight: "bold", fontSize: 14 }}
                 />
                 <YAxis
-                  domain={[1000, 3500]}
+                  domain={[600, 3000]}
                   tick={{ fontWeight: "bold", fontSize: 14 }}
                 />
                 <Tooltip content={<CustomTooltip />} />
@@ -258,10 +205,7 @@ T-wave: ${results.tWave}
           )}
           {/* Delete button */}
           <div className="d-flex justify-content-end mt-3">
-            <button
-              className="btn btn-danger"
-              onClick={deleteAllData}
-            >
+            <button className="btn btn-danger" onClick={deleteAllData}>
               Delete All Data
             </button>
           </div>

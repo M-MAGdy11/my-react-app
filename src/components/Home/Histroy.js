@@ -20,7 +20,7 @@ const HistoryPage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const bloodPressureSnapshot = await getDocs(collection(db, "blood_pressure_history"));
+        const bloodPressureSnapshot = await getDocs(collection(db, "human_health_history"));
         const bloodPressureReadings = bloodPressureSnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
@@ -63,10 +63,10 @@ const HistoryPage = () => {
     if (!confirmDelete) return;
 
     try {
-      const bloodPressureQuery = query(collection(db, "blood_pressure_history"));
+      const bloodPressureQuery = query(collection(db, "human_health_history"));
       const bloodPressureSnapshot = await getDocs(bloodPressureQuery);
       const bloodPressureDeletePromises = bloodPressureSnapshot.docs.map((docSnapshot) =>
-        deleteDoc(doc(db, "blood_pressure_history", docSnapshot.id))
+        deleteDoc(doc(db, "human_health_history", docSnapshot.id))
       );
 
       const ecgAnalysisQuery = query(collection(db, "ecg_results"));
@@ -125,7 +125,7 @@ const HistoryPage = () => {
 
       <div className="container my-5">
         <div className="text-center">
-          <div className="pretty-box">🩺 Blood Pressure History</div>
+          <div className="pretty-box">🩺 Human Health History</div>
         </div>
         <table className="table table-hover shadow-lg">
           <thead className="bg-primary text-white">
